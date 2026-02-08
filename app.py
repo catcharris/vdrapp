@@ -158,6 +158,9 @@ def main():
         os.kill(os.getpid(), signal.SIGKILL)
     
     st.markdown("---")
+    
+    # User Profile (Return to Sidebar context or handle properly)
+    with st.sidebar:
         st.session_state['session'].student_name = st.text_input("Name", st.session_state['session'].student_name)
         st.session_state['session'].part = st.selectbox("Part", PARTS, index=PARTS.index(st.session_state['session'].part))
         st.session_state['session'].coach_name = st.text_input("Coach", st.session_state['session'].coach_name)
