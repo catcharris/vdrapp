@@ -79,13 +79,14 @@ class AudioProcessor:
         Calculates vocal metrics with strict validation.
         """
         metrics = {
-            "accuracy": 0.0,
-            "stability": 0.0,
-            "drift": 0.0,
+            "accuracy": 999.0,   # Default to Bad (High Error)
+            "stability": 999.0,  # Default to Unstable
+            "drift": 999.0,      # Default to High Drift
             "overshoot": 0.0,
             "mean_pitch_hz": 0.0,
             "voiced_ratio": 0.0,
-            "confidence": "High"
+            "confidence": "High",
+            "on_target_ratio": 0.0 # Default to 0%
         }
         
         # 1. Filter by Confidence & Voice Range
@@ -110,6 +111,7 @@ class AudioProcessor:
         
         if len(voiced_f0) == 0:
             metrics["confidence"] = "Low"
+            # Metrics remain at default (999.0 = Bad)
             return metrics
 
         if metrics["voiced_ratio"] < 0.7:  # User constraint: < 70% is low confidence

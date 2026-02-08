@@ -33,15 +33,19 @@ def generate_diagnosis(result, part):
     diagnosis = []
     
     # Accuracy
-    if result.pitch_accuracy_cents > 50:
+    if result.pitch_accuracy_cents >= 900.0:
+        diagnosis.append("음정이 감지되지 않았거나 분석에 실패했습니다. (소음/무음)")
+    elif result.pitch_accuracy_cents > 50:
         diagnosis.append(f"피치가 목표음보다 평균 {result.pitch_accuracy_cents:.1f} cents 벗어났습니다. (정확도 주의)")
     elif result.pitch_accuracy_cents < 20:
         diagnosis.append("피치 정확도가 매우 우수합니다.")
 
     # Stability
-    if result.pitch_stability_cents > 30:
+    if result.pitch_stability_cents >= 900.0:
+        pass # Already handled by accuracy failure message
+    elif result.pitch_stability_cents > 30:
         diagnosis.append("음의 흔들림(Vibrato/Tremolo)이 다소 큽니다. 호흡 지탱을 확인하세요.")
-    elif result.pitch_stability_cents < 10:
+    elif result.pitch_stability_cents < 10 and result.pitch_stability_cents >= 0:
         diagnosis.append("음이 매우 안정적입니다 (Straight Tone).")
 
     # Drift
