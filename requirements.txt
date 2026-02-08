@@ -8,3 +8,4 @@ matplotlib
 pretty_midi
 plotly
 pandas
+mediapipe
