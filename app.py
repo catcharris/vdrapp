@@ -174,9 +174,11 @@ def main():
         # Display Target Note for Sustained Tests
         if "Sustained" in test['name']:
             target_map = {
-                "Soprano": "F4 (349 Hz)", "Tenor": "F4 (349 Hz)", 
-                "Alto": "E4 (330 Hz)", "Baritone": "E4 (330 Hz)", 
-                "Bass": "D4 (294 Hz)"
+                "Soprano": "F5 (698 Hz)", 
+                "Alto": "E5 (659 Hz)", 
+                "Tenor": "F4 (349 Hz)", 
+                "Baritone": "E4 (330 Hz)", 
+                "Bass": "Eb4 (311 Hz)"
             }
             target_note = target_map.get(st.session_state['session'].part, "C4")
             target_note = target_map.get(st.session_state['session'].part, "C4").split(" ")[0] # Extract "F4" from "F4 (349 Hz)"
