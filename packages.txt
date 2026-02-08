@@ -1,5 +1,6 @@
 libgl1-mesa-glx
 libglib2.0-0
+unzip
 libsndfile1
 ffmpeg
 libsm6
