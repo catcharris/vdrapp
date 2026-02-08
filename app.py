@@ -117,7 +117,7 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("VDR Settings")
-        st.caption("v1.6 (Legacy Mode 0.8.9.1) ✅")
+        st.caption("v1.7 (Headless Removed) ✅")
         
         # User Profile
         st.subheader("Student Profile")
