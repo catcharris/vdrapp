@@ -310,7 +310,9 @@ def main():
                             st.error("Could not detect face/landmarks in the video. Please ensure face is visible.")
                             
                     except Exception as e:
+                        import traceback
                         st.error(f"Video Processing Error: {e}")
+                        st.code(traceback.format_exc())
 
     st.markdown("---")
     if st.button("Next Test ->"):
