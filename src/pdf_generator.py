@@ -12,7 +12,7 @@ import numpy as np
 from .models import StudentSession
 
 # Register Font
-FONT_PATH = os.path.join(os.path.dirname(__file__), '../../VDR_Project/assets/fonts/NanumGothic.ttf')
+FONT_PATH = os.path.join(os.path.dirname(__file__), '../assets/fonts/NanumGothic.ttf')
 # Resolving absolute path relative to this file location
 FONT_PATH = os.path.abspath(FONT_PATH)
 
