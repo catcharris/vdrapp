@@ -117,7 +117,7 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("VDR Settings")
-        st.caption("v1.3 (Direct Import Patch) ✅")
+        st.caption("v1.4 (Unpinned & Patched) ✅")
         
         # User Profile
         st.subheader("Student Profile")

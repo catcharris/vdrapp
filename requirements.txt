@@ -8,5 +8,5 @@ matplotlib
 pretty_midi
 plotly
 pandas
-mediapipe==0.10.0
-protobuf==3.20.3
+mediapipe
+# protobuf pinning removed to avoid install errors
