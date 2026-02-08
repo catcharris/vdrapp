@@ -147,7 +147,13 @@ def main():
                 "Bass": "D4 (294 Hz)"
             }
             target_note = target_map.get(st.session_state['session'].part, "C4")
-            st.info(f"🎵 **Target Note (Passaggio Start)**: {target_note}")
+            target_note = target_map.get(st.session_state['session'].part, "C4").split(" ")[0] # Extract "F4" from "F4 (349 Hz)"
+            st.info(f"🎵 **Target Note (Passaggio Start)**: {target_map.get(st.session_state['session'].part)}")
+            
+            # Draw Score
+            from src.score_drawer import draw_staff_and_note
+            score_img = draw_staff_and_note(target_note)
+            st.image(score_img, caption=f"Target: {target_note}", width=200)
         
         st.markdown(f"_Duration Guide: {test['duration_guide']} seconds_")
         
