@@ -7,24 +7,10 @@ import os
 
 class VideoProcessor:
     def __init__(self):
-        # Direct import to bypass "no attribute 'solutions'" error
-        try:
-            # Try efficient direct import
-            from mediapipe.python.solutions import face_mesh
-        except ImportError:
-            try:
-                # Try standard import
-                from mediapipe.solutions import face_mesh
-            except ImportError:
-                # Fallback to dynamic (last resort)
-                import mediapipe as mp
-                if hasattr(mp, 'solutions'):
-                    face_mesh = mp.solutions.face_mesh
-                else:
-                    raise ImportError("Could not import mediapipe.solutions.face_mesh. Please check installation.")
-
-        self.face_mesh_module = face_mesh
-        self.face_mesh = self.face_mesh_module.FaceMesh(
+        # Legacy Mode Support (0.8.9.1)
+        import mediapipe as mp
+        self.mp_face_mesh = mp.solutions.face_mesh
+        self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
             max_num_faces=1,
             refine_landmarks=True,
