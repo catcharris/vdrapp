@@ -127,16 +127,18 @@ def main():
             st.markdown("""
             **현재 Python 3.13 (호환 불가) 실행 중!**
             
-            MediaPipe는 3.13에서 작동하지 않습니다.
-            서버를 **재부팅(Reboot)**해야 3.11로 변경됩니다.
-            
-            **[해결 방법]**
-            1. 우측 상단 `⋮` (점 3개) 클릭
-            2. **'Reboot App'** 클릭 🔴
-            3. (안 보이면) 'Manage App' -> 'Reboot App'
-            
-            재부팅 후 이 메시지가 사라져야 합니다.
+            리부팅/삭제 버튼이 안 보이신다면, 아래 **빨간 버튼**을 눌러보세요.
+            서버를 강제로 종료시켜서 재부팅을 유도합니다.
             """)
+            
+            if st.button("💣 FORCE SERVER REBOOT (Emergency)", type="primary"):
+                st.warning("Killing server process... Please wait for automatic restart.")
+                import os
+                import signal
+                import time
+                time.sleep(1)
+                os.kill(os.getpid(), signal.SIGKILL)
+            
             st.caption(f"Current: Python {sys.version.split()[0]} ❌")
         else:
             st.caption(f"v1.11 (Python {sys.version.split()[0]} OK) ✅")
