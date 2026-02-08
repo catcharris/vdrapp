@@ -147,7 +147,7 @@ def main():
                 "Bass": "D4 (294 Hz)"
             }
             target_note = target_map.get(st.session_state['session'].part, "C4")
-            st.info(f"🎵 **Target Note**: {target_note}")
+            st.info(f"🎵 **Target Note (Passaggio Start)**: {target_note}")
         
         st.markdown(f"_Duration Guide: {test['duration_guide']} seconds_")
         
