@@ -168,7 +168,12 @@ def main():
     
     if current_index < len(tests):
         test = tests[current_index]
-        st.header(f"Test {current_index + 1}/{len(tests)}: {test['name']}")
+        st.subheader(f"Test {current_index + 1}/{len(tests)}: {test['name']}")
+
+    # Tabs for Audio / Video
+    tab1, tab2 = st.tabs(["🎤 Audio Analysis", "📹 Video Analysis (Face Tension)"])
+
+    with tab1:
         st.markdown(f"**Instructions**: {test['description']}")
         
         # Display Target Note for Sustained Tests
@@ -180,7 +185,6 @@ def main():
                 "Baritone": "E4 (330 Hz)", 
                 "Bass": "Eb4 (311 Hz)"
             }
-            target_note = target_map.get(st.session_state['session'].part, "C4")
             target_note = target_map.get(st.session_state['session'].part, "C4").split(" ")[0] # Extract "F4" from "F4 (349 Hz)"
             st.info(f"🎵 **Target Note (Passaggio Start)**: {target_map.get(st.session_state['session'].part)}")
             
@@ -191,10 +195,22 @@ def main():
                 hz_str = target_str.split("(")[1].split(" ")[0]
                 target_hz = float(hz_str)
                 
-                from src.audio_processor import generate_tone
-                tone_bytes = generate_tone(target_hz, duration_sec=2.0)
+                # Use Piano Synth for Reference Pitch
+                from src.synth import generate_piano_note
+                import scipy.io.wavfile as wavfile
+                import io
+                import numpy as np
+                
+                # Generate 2 seconds of Piano C4/F4/etc
+                waveform = generate_piano_note(target_hz, duration=2.0)
+                # Normalize and save
+                waveform_int16 = (waveform / np.max(np.abs(waveform)) * 32767).astype(np.int16)
+                buf = io.BytesIO()
+                wavfile.write(buf, 44100, waveform_int16)
+                tone_bytes = buf
+                
                 st.audio(tone_bytes, format='audio/wav', start_time=0)
-                st.caption("🔊 Play Reference Pitch")
+                st.caption("🎹 Play Reference Pitch (Piano)")
             except Exception as e:
                 st.warning(f"Audio Playback Error: {e}")
         
@@ -203,79 +219,92 @@ def main():
         # Recording / Upload
         audio_value = st.audio_input(f"Record {test['name']}")
         
-        uploaded_file = None
         if audio_value:
-            uploaded_file = audio_value
-        else:
-            with st.expander("Or upload a file"):
-                uploaded_file = st.file_uploader(f"Upload Recording for {test['id']}", type=['wav', 'mp3', 'm4a'], key=f"uploader_{test['id']}")
-        
-        if uploaded_file is not None:
-            if st.button(f"Analyze {test['name']}", key=f"analyze_{test['id']}"):
-                with st.spinner("Analyzing Audio..."):
-                    filepath = save_uploaded_file(uploaded_file, test['id'])
-                    
-                    # Determine target note for accuracy
-                    # For MVP, we map Part to a default target note for Sustained tests
-                    # Soprano/Tenor -> F4, Alto/Baritone -> E4, Bass -> D4
-                    target_map = {
-                        "Soprano": "F4", "Tenor": "F4", 
-                        "Alto": "E4", "Baritone": "E4", 
-                        "Bass": "D4"
-                    }
-                    part = st.session_state['session'].part
-                    target = target_map.get(part, "C4") if "Sustained" in test['name'] else None
-                    
-                    result = analyze_audio(filepath, test['id'], target, part)
-                    st.session_state['session'].add_result(result)
-                    st.success("Analysis Complete!")
-        
-        # Display Current Results
-        current_result = st.session_state['session'].get_result(test['id'])
-        if current_result:
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Score (On-Target)", f"{current_result.pitch_on_target_ratio*100:.0f}%")
-            col2.metric("Stability", f"{current_result.pitch_stability_cents:.1f}")
-            col3.metric("Drift", f"{current_result.pitch_drift_cents:.1f}")
-            col4.metric("Avg Error", f"{current_result.pitch_accuracy_cents:.1f}")
+            st.audio(audio_value, format='audio/wav')
             
-            # Show Diagnosis
-            for tag in current_result.tags:
-                if tag.tag_type == "Diagnosis":
-                    st.info(f"**Diagnosis**: {tag.description}")
-            
-            st.subheader("Pitch & Energy Track")
-            # Simple Plot using Matplotlib
-            
-            # Font Config
-            try:
-                import matplotlib.font_manager as fm
-                FONT_PATH = os.path.join(os.path.dirname(__file__), 'assets/fonts/NanumGothic.ttf')
-                prop = fm.FontProperties(fname=FONT_PATH)
-                plt.rcParams['font.family'] = prop.get_name()
-            except:
-                prop = None
+            with st.spinner("Analyzing..."):
+                # Save to temp file
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                    tmp_file.write(audio_value.read())
+                    tmp_path = tmp_file.name
+                
+                # Analyze
+                from src.audio_processor import AudioProcessor
+                processor = AudioProcessor()
+                y, sr = processor.load_audio(tmp_path)
+                metrics = processor.calculate_metrics(y, sr, target_note=test.get('target_note'))
+                
+                st.success("Analysis Complete!")
+                
+                # Diagnosis
+                diagnosis = generate_diagnosis(metrics, test['name'])
+                st.session_state['session'].add_result(
+                    test_name=test['name'],
+                    metrics=metrics,
+                    diagnosis=diagnosis
+                )
+                
+                # Display Result
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Pitch Accuracy (Cents)", f"{metrics['accuracy']:.1f}", delta_color="inverse")
+                col2.metric("Stability (Std Dev)", f"{metrics['stability']:.1f}", delta_color="inverse")
+                col3.metric("Drift (Slope)", f"{metrics['drift']:.2f}")
+                
+                 # Feedback based on On-Target Ratio
+                if metrics['on_target_ratio'] < 0.6:
+                    st.warning(f"⚠️ **Unstable Pitch**: Only {metrics['on_target_ratio']*100:.1f}% of frames were on target.")
+                else:
+                    st.success(f"✅ **Stable Pitch**: {metrics['on_target_ratio']*100:.1f}% on target.")
 
-            fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 4))
-            times = np.array(current_result.pitch_track_time)
-            pitch = np.array(current_result.pitch_track_hz)
-            energy = np.array(current_result.energy_track_rms)
+                # Diagnosis List
+                st.write("### 🩺 Diagnosis")
+                for item in diagnosis:
+                    st.write(f"- {item}")
+                
+                # Graphs
+                st.plotly_chart(generate_pitch_plot(y, sr, metrics['mean_pitch_hz']), use_container_width=True)
+
+    with tab2:
+        st.markdown("### 📹 Facial Tension Analysis")
+        st.info("💡 **On Mobile?** Tap 'Browse files' -> Select 'Camera' to record directly!\n\n(Desktop browsers may only support file upload for now.)")
+        
+        video_file = st.file_uploader("Upload Video (or Record on Mobile)", type=["mp4", "mov", "avi"])
+        
+        if video_file:
+            # Display Video
+            st.video(video_file)
             
-            # Mask unvoiced for pitch plot
-            voiced_mask = pitch > 0 
-            ax[0].plot(times[voiced_mask], pitch[voiced_mask], '.')
-            ax[0].set_ylabel("Freq (Hz)")
-            ax[0].set_title("Pitch")
-            
-            ax[1].plot(times, energy, color='orange')
-            ax[1].set_ylabel("Energy")
-            ax[1].set_xlabel("Time (s)")
-            
-            st.pyplot(fig)
-            
-            if st.button("Next Test ->"):
-                st.session_state['current_test_index'] += 1
-                st.rerun()
+            if st.button("Analyze Face Tension"):
+                with st.spinner("Processing Video (MediaPipe Face Mesh)..."):
+                    import tempfile
+                    tfile = tempfile.NamedTemporaryFile(delete=False) 
+                    tfile.write(video_file.read())
+                    
+                    from src.video_processor import VideoProcessor
+                    vp = VideoProcessor()
+                    df = vp.process_video(tfile.name)
+                    
+                    if df is not None and not df.empty:
+                        st.success("Analysis Complete!")
+                        fig = vp.generate_tension_chart(df)
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        avg_ratio = df['tension_ratio'].mean()
+                        st.metric("Average Tension Ratio (Width/Height)", f"{avg_ratio:.2f}")
+                        
+                        if avg_ratio > 1.5:
+                            st.warning("⚠️ **High Horizontal Tension**: Your mouth tends to spread wide (smile shape). Try to drop your jaw more for a vertical vowel shape.")
+                        else:
+                            st.success("✅ **Good Jaw Opening**: Your mouth shape seems balanced.")
+                            
+                    else:
+                        st.error("Could not detect face/landmarks in the video.")
+
+    st.markdown("---")
+    if st.button("Next Test ->"):
+        st.session_state['current_test_index'] += 1
+        st.rerun()
                 
     else:
         # All Tests Completed
