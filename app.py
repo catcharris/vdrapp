@@ -279,29 +279,38 @@ def main():
             
             if st.button("Analyze Face Tension"):
                 with st.spinner("Processing Video (MediaPipe Face Mesh)..."):
-                    import tempfile
-                    tfile = tempfile.NamedTemporaryFile(delete=False) 
-                    tfile.write(video_file.read())
-                    
-                    from src.video_processor import VideoProcessor
-                    vp = VideoProcessor()
-                    df = vp.process_video(tfile.name)
-                    
-                    if df is not None and not df.empty:
-                        st.success("Analysis Complete!")
-                        fig = vp.generate_tension_chart(df)
-                        st.plotly_chart(fig, use_container_width=True)
+                    try:
+                        import tempfile
+                        # Create temp file, write, and CLOSE it so other libs can read it
+                        tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') 
+                        tfile.write(video_file.read())
+                        tfile.close() # Critical: Close before OpenCV opens it
                         
-                        avg_ratio = df['tension_ratio'].mean()
-                        st.metric("Average Tension Ratio (Width/Height)", f"{avg_ratio:.2f}")
+                        from src.video_processor import VideoProcessor
+                        vp = VideoProcessor()
+                        df = vp.process_video(tfile.name)
                         
-                        if avg_ratio > 1.5:
-                            st.warning("⚠️ **High Horizontal Tension**: Your mouth tends to spread wide (smile shape). Try to drop your jaw more for a vertical vowel shape.")
-                        else:
-                            st.success("✅ **Good Jaw Opening**: Your mouth shape seems balanced.")
+                        # Cleanup
+                        os.unlink(tfile.name)
+                        
+                        if df is not None and not df.empty:
+                            st.success("Analysis Complete!")
+                            fig = vp.generate_tension_chart(df)
+                            st.plotly_chart(fig, use_container_width=True)
                             
-                    else:
-                        st.error("Could not detect face/landmarks in the video.")
+                            avg_ratio = df['tension_ratio'].mean()
+                            st.metric("Average Tension Ratio (Width/Height)", f"{avg_ratio:.2f}")
+                            
+                            if avg_ratio > 1.5:
+                                st.warning("⚠️ **High Horizontal Tension**: Your mouth tends to spread wide (smile shape). Try to drop your jaw more for a vertical vowel shape.")
+                            else:
+                                st.success("✅ **Good Jaw Opening**: Your mouth shape seems balanced.")
+                                
+                        else:
+                            st.error("Could not detect face/landmarks in the video. Please ensure face is visible.")
+                            
+                    except Exception as e:
+                        st.error(f"Video Processing Error: {e}")
 
     st.markdown("---")
     if st.button("Next Test ->"):
