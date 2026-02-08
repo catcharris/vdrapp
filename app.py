@@ -55,6 +55,12 @@ def generate_diagnosis(result, part):
     # Assuming result object has it or we add it to the model.
     # For now, simplistic check if accuracy is 0 (which might imply no voiced frames found)
     
+    # New Strict Check: On-Target Ratio
+    if result.pitch_on_target_ratio < 0.6:
+        diagnosis.append("음정이 불안정하여 목표음을 많이 벗어납니다. (정확도 < 60%)")
+    elif result.pitch_on_target_ratio < 0.85:
+        diagnosis.append("중간중간 음정이 흔들립니다. 호흡 지탱에 신경쓰세요.")
+    
     if not diagnosis:
         diagnosis.append("전반적으로 안정적인 발성입니다. 세부 지표인 비브라토 속도 등을 체크해보세요.")
 
@@ -89,6 +95,7 @@ def analyze_audio(filepath, test_id, target_note=None, voice_part="Soprano"):
         pitch_accuracy_cents=metrics['accuracy'],
         pitch_stability_cents=metrics['stability'],
         pitch_drift_cents=metrics['drift'],
+        pitch_on_target_ratio=metrics.get('on_target_ratio', 0.0),
         attack_overshoot_score=metrics['overshoot'],
         processed_at=datetime.datetime.now()
     )
@@ -162,10 +169,11 @@ def main():
         # Display Current Results
         current_result = st.session_state['session'].get_result(test['id'])
         if current_result:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Stability (Std Cents)", f"{current_result.pitch_stability_cents:.2f}")
-            col2.metric("Drift (Cents)", f"{current_result.pitch_drift_cents:.2f}")
-            col3.metric("Accuracy (Error)", f"{current_result.pitch_accuracy_cents:.2f}")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Score (On-Target)", f"{current_result.pitch_on_target_ratio*100:.0f}%")
+            col2.metric("Stability", f"{current_result.pitch_stability_cents:.1f}")
+            col3.metric("Drift", f"{current_result.pitch_drift_cents:.1f}")
+            col4.metric("Avg Error", f"{current_result.pitch_accuracy_cents:.1f}")
             
             # Show Diagnosis
             for tag in current_result.tags:

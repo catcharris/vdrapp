@@ -28,6 +28,7 @@ class TestResult:
     pitch_accuracy_cents: float = 0.0 # Error from target
     pitch_stability_cents: float = 0.0 # Std dev
     pitch_drift_cents: float = 0.0 # Start vs End
+    pitch_on_target_ratio: float = 0.0 # Ratio of frames within +/- 50 cents
     attack_overshoot_score: float = 0.0 
     
     tags: List[TagInstance] = field(default_factory=list)

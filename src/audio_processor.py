@@ -135,11 +135,19 @@ class AudioProcessor:
             # Take minimum error across candidates for each frame
             min_cents_error = np.min(raw_cents_errors, axis=0)
             
-            # Median
-            accuracy = float(np.median(min_cents_error))
+            # Metric 1: Accuracy (Mean Error) - Penalize drops significantly
+            # Previously used Median, which hid short drops.
+            metrics["accuracy"] = float(np.mean(min_cents_error))
             
-            # Clamp to 0-200
-            metrics["accuracy"] = min(200.0, accuracy)
+            # Metric 2: On-Target Ratio
+            # Percentage of frames within +/- 50 cents of target
+            on_target_mask = min_cents_error <= 50.0
+            metrics["on_target_ratio"] = float(np.mean(on_target_mask))
+            
+            # Clamp accuracy to 0-200 for sanity
+            metrics["accuracy"] = min(200.0, metrics["accuracy"])
+        else:
+             metrics["on_target_ratio"] = 0.0
         
         # 3. Pitch Stability (Pre-Passaggio Primary)
         # Determine Pre/Post regions
