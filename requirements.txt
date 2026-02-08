@@ -8,4 +8,5 @@ matplotlib
 pretty_midi
 plotly
 pandas
-mediapipe
+mediapipe==0.10.9
+protobuf<4.0.0
