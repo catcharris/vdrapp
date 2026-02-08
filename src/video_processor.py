@@ -7,6 +7,14 @@ import os
 
 class VideoProcessor:
     def __init__(self):
+        # Fix for "module 'mediapipe' has no attribute 'solutions'"
+        if not hasattr(mp, 'solutions'):
+            try:
+                import mediapipe.python.solutions as solutions
+                mp.solutions = solutions
+            except ImportError:
+                pass
+
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
