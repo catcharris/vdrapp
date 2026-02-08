@@ -207,6 +207,7 @@ def main():
                 waveform_int16 = (waveform / np.max(np.abs(waveform)) * 32767).astype(np.int16)
                 buf = io.BytesIO()
                 wavfile.write(buf, 44100, waveform_int16)
+                buf.seek(0) # Critical: Reset pointer to start
                 tone_bytes = buf
                 
                 st.audio(tone_bytes, format='audio/wav', start_time=0)
