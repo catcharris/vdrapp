@@ -1,9 +1,10 @@
-streamlit
+streamlibrosa
 numpy
 scipy
-librosa
+reportlab
 soundfile
 matplotlib
+pretty_midi
 reportlab
 plotly
 pandas

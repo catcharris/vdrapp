@@ -114,9 +114,12 @@ def main():
     st.set_page_config(page_title="Vocal Diagnostic Report", layout="wide")
     st.title("🎤 Vocal Diagnostic Report (VDR)")
 
-    # Sidebar: Setup
+    # Sidebar
     with st.sidebar:
-        st.header("1. Student Info")
+        st.title("VDR Settings")
+        
+        # User Profile
+        st.subheader("Student Profile")
         st.session_state['session'].student_name = st.text_input("Name", st.session_state['session'].student_name)
         st.session_state['session'].part = st.selectbox("Part", PARTS, index=PARTS.index(st.session_state['session'].part))
         st.session_state['session'].coach_name = st.text_input("Coach", st.session_state['session'].coach_name)
@@ -125,6 +128,35 @@ def main():
         st.session_state['session'].passaggio_info = PASSAGGIO_CRITERIA[st.session_state['session'].part]
         st.info(f"Passaggio: {st.session_state['session'].passaggio_info['desc']}")
         
+        st.markdown("---")
+        
+        # MIDI Part Player
+        st.subheader("🎹 MIDI Part Practice")
+        midi_file = st.file_uploader("Upload MIDI File", type=["mid", "midi"])
+        
+        if midi_file:
+            from src.midi_handler import get_midi_tracks, synthesis_midi_track
+            # Read file pointer compatible with pretty_midi
+            # pretty_midi expects file path or file-like object
+            tracks, midi_data = get_midi_tracks(midi_file)
+            
+            if tracks:
+                track_names = [f"{t['index']}: {t['name']}" for t in tracks]
+                selected_track_str = st.selectbox("Select Part to Play", track_names)
+                selected_index = int(selected_track_str.split(":")[0])
+                
+                if st.button("Generate & Play Part"):
+                    with st.spinner("Synthesizing Audio..."):
+                        wav_bytes = synthesis_midi_track(midi_data, selected_index)
+                        if wav_bytes:
+                            st.audio(wav_bytes, format='audio/wav')
+                        else:
+                            st.error("Failed to synthesize track.")
+            else:
+                st.error("No tracks found or invalid MIDI.")
+        
+        st.markdown("---")
+
         if st.button("Reset Session"):
             st.session_state['session'] = StudentSession()
             st.session_state['current_test_index'] = 0
