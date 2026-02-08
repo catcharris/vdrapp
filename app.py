@@ -150,10 +150,18 @@ def main():
             target_note = target_map.get(st.session_state['session'].part, "C4").split(" ")[0] # Extract "F4" from "F4 (349 Hz)"
             st.info(f"🎵 **Target Note (Passaggio Start)**: {target_map.get(st.session_state['session'].part)}")
             
+            # Determine Clef Type
+            # User request: Tenor should use Bass Clef. Baritone/Bass also Bass Clef.
+            part = st.session_state['session'].part
+            if part in ["Tenor", "Baritone", "Bass"]:
+                clef_type = "Bass"
+            else:
+                clef_type = "Treble" # Soprano, Alto
+
             # Draw Score
             from src.score_drawer import draw_staff_and_note
-            score_img = draw_staff_and_note(target_note)
-            st.image(score_img, caption=f"Target: {target_note}", width=200)
+            score_img = draw_staff_and_note(target_note, clef_type=clef_type)
+            st.image(score_img, caption=f"Target: {target_note} ({clef_type} Clef)", width=300)
         
         st.markdown(f"_Duration Guide: {test['duration_guide']} seconds_")
         
