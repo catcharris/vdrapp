@@ -34,7 +34,7 @@ class VideoProcessor:
             min_tracking_confidence=0.5
         )
 
-    def process_video(self, video_file_path):
+    def process_video(self, video_file_path, rotate=False):
         """
         Processes video to extract facial tension metrics.
         Returns (DataFrame, Max_Opening_Frame_RGB).
@@ -47,13 +47,17 @@ class VideoProcessor:
         frame_count = 0
         
         data = []
-        max_vertical_dist = -1
+        max_openness = -1
         max_frame_rgb = None
         
         while cap.isOpened():
             success, image = cap.read()
             if not success:
                 break
+            
+            # Rotation Correction (Simple 90 deg clockwise if requested)
+            if rotate:
+                image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
                 
             # Convert BGR to RGB
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -69,32 +73,37 @@ class VideoProcessor:
                         lm = face_landmarks.landmark[idx]
                         return np.array([lm.x * w, lm.y * h])
                     
+                    # Landmarks
+                    # 13: Inner Upper Lip, 14: Inner Lower Lip
+                    # 10: Forehead Top, 152: Chin Bottom
+                    
                     upper = get_coords(13)
                     lower = get_coords(14)
-                    left = get_coords(61)
-                    right = get_coords(291)
+                    forehead = get_coords(10)
+                    chin = get_coords(152)
                     
                     # Vertical Opening
                     vertical_dist = np.linalg.norm(upper - lower)
                     
-                    # Horizontal Spread
-                    horizontal_dist = np.linalg.norm(left - right)
+                    # Face Height (Normalization Base)
+                    face_height = np.linalg.norm(forehead - chin)
                     
-                    # Capture Max Opening Frame (Thumbnail Candidate)
-                    if vertical_dist > max_vertical_dist:
-                        max_vertical_dist = vertical_dist
+                    # Normalized Openness (%)
+                    # 0% = Closed
+                    # 10% = Moderate
+                    # 30%+ = Wide Open (Screaming/Singing High Note)
+                    openness = (vertical_dist / (face_height + 1e-6)) * 100
+                    
+                    # Capture Max Opening Frame
+                    if openness > max_openness:
+                        max_openness = openness
                         max_frame_rgb = image_rgb.copy()
-                    
-                    # Tension Metric: Width / Height
-                    # If Ratio > 5.0 -> Likely Mouth Closed
-                    # Normal Singing (Ah) -> Ratio 0.8 ~ 1.5
-                    ratio = horizontal_dist / (vertical_dist + 1e-6)
                     
                     data.append({
                         "time": timestamp,
                         "vertical_opening": vertical_dist,
-                        "horizontal_spread": horizontal_dist,
-                        "tension_ratio": ratio
+                        "face_height": face_height,
+                        "openness": openness
                     })
             
             frame_count += 1
@@ -111,17 +120,16 @@ class VideoProcessor:
         if df.empty:
             return None
             
-        # Filter insane ratios (e.g. mouth closed) for better chart scaling
-        # Cap ratio at 5.0 for visualization
-        df['display_ratio'] = df['tension_ratio'].clip(upper=5.0)
-            
-        fig = px.line(df, x="time", y="display_ratio", title="구강 긴장도 (가로/세로 비율)")
-        fig.add_hline(y=1.5, line_dash="dash", line_color="red", annotation_text="긴장 구간 (가로 벌어짐)")
-        fig.add_hline(y=1.0, line_dash="dot", line_color="green", annotation_text="이상적 발성 (1.0 이하)")
+        # Chart: Openness %
+        fig = px.line(df, x="time", y="openness", title="구강 개방도 (얼굴 길이 대비 입 벌림 %)")
+        
+        # Benchmarks
+        fig.add_hline(y=10.0, line_dash="dot", line_color="green", annotation_text="적정 발성 (10%~)")
+        fig.add_hline(y=25.0, line_dash="dash", line_color="red", annotation_text="최대 개방 (25%~)")
         
         fig.update_layout(
-            yaxis_title="비율 (낮을수록 좋음: 수직 개방)", 
+            yaxis_title="개방도 (%)", 
             xaxis_title="시간 (초)",
-            yaxis_range=[0, 5.0]
+            yaxis_range=[0, 40.0] # Scale 0 to 40%
         )
         return fig

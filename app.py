@@ -321,19 +321,23 @@ def main():
         
         with st.expander("📘 **[필독] 분석 결과 해석 및 촬영 가이드**"):
             st.markdown("""
-            ### 1. 📉 그래프 보는 법
-            - **Y축 (비율)**: 입의 가로 길이 ÷ 세로 길이 (Width / Height)
-                - **1.0 ~ 1.5**: 가장 이상적인 '아(Ah)' 발성 모양 (계란형)
-                - **2.0 이상**: 입술이 옆으로 찢어진 '스마일(Smile)' 형태 (긴장도 높음 ⚠️)
-                - **10.0 이상**: 입을 거의 다문 상태 (측정 불가 ❌)
-            - **X축 (시간)**: 노래 부르는 동안의 시간 흐름
+            ### 1. 📉 그래프 보는 법 (구강 개방도 %)
+            - **측정 방식**: 얼굴 전체 길이 대비 입이 세로로 얼마나 열렸는지 측정합니다. (Scale-Independent)
+            - **수치 해석**:
+                - **10% ~ 20%**: 안정적인 발성 (적당한 열림) ✅
+                - **25% 이상**: 매우 크게 벌린 상태 (성량 확보/고음) 🔥
+                - **10% 미만**: 입을 거의 안 벌림 (웅얼거림 주의) ⚠️
+            
+            ### 2. 🔄 영상 회전 기능
+            - 만약 캡처된 사진이 **옆으로 누워 보인다면**, 위쪽의 **'영상 회전'** 체크박스를 켜고 다시 분석하세요!
 
-            ### 2. 📸 촬영 팁
-            - **정면**에서 얼굴이 잘 보이게 찍어주세요.
-            - 마스크나 손으로 입을 가리면 분석이 안 됩니다.
-            - **'아~'** 발음으로 소리 낼 때 입을 위아래로 크게 벌리는지 확인해보세요.
+            ### 3. 📸 촬영 팁
+            - **'아~'** 발음으로 입을 위아래로 크게 벌려보세요.
             """)
 
+        # Rotation Checkbox
+        rotate_video = st.checkbox("🔄 영상 회전 (화면이 누워있으면 체크하세요)", value=False)
+        
         video_file = st.file_uploader("Upload Video (or Record on Mobile)", type=["mp4", "mov", "avi"])
         
         if video_file:
@@ -351,7 +355,9 @@ def main():
                         
                         from src.video_processor import VideoProcessor
                         vp = VideoProcessor()
-                        df, max_frame = vp.process_video(tfile.name)
+                        
+                        # Pass rotation flag
+                        df, max_frame = vp.process_video(tfile.name, rotate=rotate_video)
                         
                         # Cleanup
                         os.unlink(tfile.name)
@@ -368,23 +374,23 @@ def main():
                             fig = vp.generate_tension_chart(df)
                             st.plotly_chart(fig, use_container_width=True)
                             
-                            avg_ratio = df['tension_ratio'].mean()
+                            avg_openness = df['openness'].max() # Use MAX openness, not mean, as per user feedback ("I opened wide")
+                            # Or usually avg of top 10%? Let's show Max for "Capacity"
                             
-                            col1, col2 = st.columns(2)
-                            col1.metric("평균 긴장도 비율 (가로/세로)", f"{avg_ratio:.2f}")
+                            st.metric("최대 구강 개방도 (Max Openness)", f"{avg_openness:.1f} %")
                             
-                            if avg_ratio > 10.0:
-                                st.error(f"⚠️ **입을 거의 안 벌리셨네요!** (비율 {avg_ratio:.1f})")
-                                st.info("세로로 입이 열리지 않아서 수치가 매우 높게 나왔습니다.\n'아~' 하고 하품하듯이 입을 위아래로 크게 벌려보세요.")
-                            elif avg_ratio > 2.0:
-                                st.warning(f"⚠️ **가로 긴장도 높음** (비율 {avg_ratio:.2f})")
-                                st.write("입술이 옆으로 찢어지는 '스마일' 형태입니다. 턱을 더 아래로 툭 떨어뜨리세요.")
+                            if avg_openness < 10.0:
+                                st.warning(f"⚠️ **입을 작게 벌리셨네요** (최대 {avg_openness:.1f}%)")
+                                st.info("성악 발성에서는 '아' 발음 시 입을 세로로 충분히(20% 이상) 벌려야 소리가 멀리 나갑니다.")
+                            elif avg_openness > 25.0:
+                                st.success(f"🔥 **아주 크게 벌리셨습니다!** (최대 {avg_openness:.1f}%)")
+                                st.write("시원시원한 발성입니다. 턱에 힘이 들어가지 않도록 주의하세요.")
                             else:
-                                st.success(f"✅ **좋은 구강 모양입니다!** (비율 {avg_ratio:.2f})")
-                                st.write("위아래로 잘 열려있습니다. 이 상태를 유지하세요!")
+                                st.success(f"✅ **적당한 개방도입니다** (최대 {avg_openness:.1f}%)")
+                                st.write("안정적인 발성 폼입니다.")
                                 
                         else:
-                            st.error("영상에서 얼굴을 찾을 수 없습니다. (No Face Detected)")
+                            st.error("영상에서 얼굴을 찾을 수 없습니다. (회전 옵션을 바꿔보세요)")
                             
                     except Exception as e:
                         import traceback
