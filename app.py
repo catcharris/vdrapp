@@ -197,17 +197,18 @@ def main():
                 
                 # Use Piano Synth for Reference Pitch
                 from src.synth import generate_piano_note
-                import scipy.io.wavfile as wavfile
+                import soundfile as sf
                 import io
                 import numpy as np
                 
                 # Generate 2 seconds of Piano C4/F4/etc
                 waveform = generate_piano_note(target_hz, duration=2.0)
-                # Normalize and save
-                waveform_int16 = (waveform / np.max(np.abs(waveform)) * 32767).astype(np.int16)
+                # Normalize
+                waveform = waveform / np.max(np.abs(waveform)) if np.max(np.abs(waveform)) > 0 else waveform
+                
                 buf = io.BytesIO()
-                wavfile.write(buf, 44100, waveform_int16)
-                buf.seek(0) # Critical: Reset pointer to start
+                sf.write(buf, waveform, 44100, format='WAV', subtype='PCM_16')
+                buf.seek(0) 
                 tone_bytes = buf
                 
                 st.audio(tone_bytes, format='audio/wav', start_time=0)
