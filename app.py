@@ -114,43 +114,17 @@ def main():
     st.set_page_config(page_title="Vocal Diagnostic Report", layout="wide")
     st.title("🎤 Vocal Diagnostic Report (VDR)")
 
-    # Sidebar
+    # Sidebar (v1.15)
     with st.sidebar:
-        st.title("VDR Settings")
+        st.title("VDR v1.15 (CHECK)")
+        st.caption(f"Python: {sys.version.split()[0]}")
         
-        # Version & Environment Check
-        import sys
-        current_py = sys.version.split()[0]
-        
-        # Always run this check but display logic below
-        is_python_3_13 = sys.version_info >= (3, 13)
-        
-        if is_python_3_13:
-            st.error("⚠️ CRITICAL ERROR: REBOOT REQUIRED")
-            st.caption(f"Current: Python {current_py} ❌")
-        else:
-            st.caption(f"v1.13 (Python {current_py} OK) ✅")
-        
-        # User Profile
-        st.subheader("Student Profile")
+    # FORCE BUTTON (UNCONDITIONAL v1.15)
+    st.error(f"🚨 DEBUG v1.15 CHECK - Time: {pd.Timestamp.now().strftime('%H:%M:%S')}")
+    st.info(f"Detected Python Version: {sys.version}")
 
-    # Force Reboot Button (Main Page - ALWAYS VISIBLE FOR DEBUGGING)
-    st.error(f"🚨 DEBUG MODE (v1.13) - Current Python: {current_py}")
-    
-    if is_python_3_13:
-        st.markdown(f"""
-        **현재 Python 3.13 (호환 불가) 실행 중입니다.**
-        서버가 **구버전(3.13)**에서 **신버전(3.11)**으로 교체되지 않았습니다.
-        아래 버튼을 눌러서 **강제 재부팅**을 시도합니다.
-        (현재 시간: {pd.Timestamp.now().strftime('%H:%M:%S')})
-        """)
-    else:
-        st.success("✅ Python 3.11 감지됨 (정상)")
-        st.info("혹시라도 문제가 있다면 아래 버튼으로 재부팅하세요.")
-
-    # Unconditional Button
-    if st.button("💣 서버 강제 폭파 및 재부팅 (CLICK ME)", type="primary", use_container_width=True):
-        st.warning("Killing server process... Please wait 10 seconds.")
+    if st.button("💣 FORCE REBOOT (CLICK ME NOW)", type="primary", use_container_width=True):
+        st.warning("Killing process...")
         import os
         import signal
         import time
