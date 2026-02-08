@@ -138,6 +138,17 @@ def main():
         test = tests[current_index]
         st.header(f"Test {current_index + 1}/{len(tests)}: {test['name']}")
         st.markdown(f"**Instructions**: {test['description']}")
+        
+        # Display Target Note for Sustained Tests
+        if "Sustained" in test['name']:
+            target_map = {
+                "Soprano": "F4 (349 Hz)", "Tenor": "F4 (349 Hz)", 
+                "Alto": "E4 (330 Hz)", "Baritone": "E4 (330 Hz)", 
+                "Bass": "D4 (294 Hz)"
+            }
+            target_note = target_map.get(st.session_state['session'].part, "C4")
+            st.info(f"🎵 **Target Note**: {target_note}")
+        
         st.markdown(f"_Duration Guide: {test['duration_guide']} seconds_")
         
         # Recording / Upload
