@@ -9,5 +9,5 @@ pretty_midi
 plotly
 pandas
 mediapipe
-opencv-python-headless
+
 

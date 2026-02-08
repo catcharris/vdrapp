@@ -117,7 +117,7 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("VDR Settings")
-        st.caption("v1.8 (Numpy<2 Fix) ✅")
+        st.caption("v1.9 (Pip Freeze Debug) ✅")
         
         # User Profile
         st.subheader("Student Profile")
@@ -130,20 +130,34 @@ def main():
         st.info(f"Passaggio: {st.session_state['session'].passaggio_info['desc']}")
         
         # Debug Info
-        with st.expander("🛠️ Debug Info (Show to Developer)"):
+        with st.expander("🛠️ Debug Info (Show to Developer)", expanded=True):
             import sys
+            import subprocess
+            
+            st.code(f"Python: {sys.version.split()[0]}")
+            
+            # Show pip freeze to debug installation
+            try:
+                result = subprocess.run([sys.executable, '-m', 'pip', 'freeze'], capture_output=True, text=True)
+                installed_packages = result.stdout
+                st.text("Installed Packages:")
+                st.code(installed_packages, language="text", line_numbers=True)
+            except Exception as e:
+                st.error(f"Failed to list packages: {e}")
+
+            # Specific Checks
             try:
                 import mediapipe as mp
-                st.text(f"MediaPipe: {mp.__version__}")
-                st.text(f"MP Solutions: {'✅' if hasattr(mp, 'solutions') else '❌'}")
+                st.success(f"MediaPipe: {mp.__version__}")
+                st.write(f"Has solutions? {'✅' if hasattr(mp, 'solutions') else '❌'}")
             except ImportError:
-                st.text("MediaPipe: Not Installed")
+                st.error("MediaPipe: Not Installed")
                 
             try:
                 import cv2
-                st.text(f"OpenCV: {cv2.__version__}")
+                st.success(f"OpenCV: {cv2.__version__}")
             except ImportError:
-                st.text("OpenCV: Not Installed")
+                st.error("OpenCV: Not Installed")
         
         st.markdown("---")
         
