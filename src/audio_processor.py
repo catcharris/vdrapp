@@ -121,19 +121,12 @@ class AudioProcessor:
         if target_note:
             target_hz = librosa.note_to_hz(target_note)
             
-            # Octave Error Correction: find min distance across +/- 1 octave
-            # f_target, f_target*0.5, f_target*2
-            candidates = np.array([target_hz * 0.5, target_hz, target_hz * 2.0])
+            # Strict Accuracy: NO Octave Correction
+            # User must sing the exact target note.
             
-            # Calculate cents error for all candidates for all frames
-            # shape: (3, N)
-            raw_cents_errors = []
-            for ref in candidates:
-                err = 1200 * np.log2(voiced_f0 / ref)
-                raw_cents_errors.append(np.abs(err))
-            
-            # Take minimum error across candidates for each frame
-            min_cents_error = np.min(raw_cents_errors, axis=0)
+            # Calculate cents error directly against target_hz
+            err = 1200 * np.log2(voiced_f0 / target_hz)
+            min_cents_error = np.abs(err)
             
             # Metric 1: Accuracy (Mean Error) - Penalize drops significantly
             # Previously used Median, which hid short drops.
