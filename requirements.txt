@@ -1,6 +1,6 @@
 streamlit
 librosa
-numpy
+numpy<2
 scipy
 reportlab
 soundfile
@@ -8,5 +8,6 @@ matplotlib
 pretty_midi
 plotly
 pandas
-mediapipe==0.8.9.1
+mediapipe
+opencv-python-headless
 

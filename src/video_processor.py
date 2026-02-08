@@ -7,9 +7,25 @@ import os
 
 class VideoProcessor:
     def __init__(self):
-        # Legacy Mode Support (0.8.9.1)
         import mediapipe as mp
-        self.mp_face_mesh = mp.solutions.face_mesh
+        import streamlit as st
+        
+        # Debugging MediaPipe Integrity
+        try:
+            st.toast(f"MP Version: {mp.__version__}")
+            if hasattr(mp, 'solutions'):
+                self.mp_face_mesh = mp.solutions.face_mesh
+                st.toast("MediaPipe Solutions Loaded ✅")
+            else:
+                st.error("MediaPipe loaded but has no 'solutions' attribute!")
+                # Attempt manual submodule import as last ditch
+                import mediapipe.python.solutions.face_mesh as fm
+                self.mp_face_mesh = fm
+                st.warning("Force imported face_mesh from mediapipe.python.solutions")
+        except Exception as e:
+            st.error(f"MediaPipe Import Error: {e}")
+            raise e
+
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
             max_num_faces=1,
