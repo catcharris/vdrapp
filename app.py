@@ -336,26 +336,40 @@ def main():
                         
                         from src.video_processor import VideoProcessor
                         vp = VideoProcessor()
-                        df = vp.process_video(tfile.name)
+                        df, max_frame = vp.process_video(tfile.name)
                         
                         # Cleanup
                         os.unlink(tfile.name)
                         
                         if df is not None and not df.empty:
-                            st.success("Analysis Complete!")
+                            st.success("분석 완료! (Analysis Complete)")
+                            
+                            # Show Max Opening Frame (Thumbnail)
+                            if max_frame is not None:
+                                st.write("### 📸 최대 개방 순간 (Best Open Mouth)")
+                                st.image(max_frame, caption="가장 입을 크게 벌린 순간", use_container_width=True)
+                            
+                            # Show Chart
                             fig = vp.generate_tension_chart(df)
                             st.plotly_chart(fig, use_container_width=True)
                             
                             avg_ratio = df['tension_ratio'].mean()
-                            st.metric("Average Tension Ratio (Width/Height)", f"{avg_ratio:.2f}")
                             
-                            if avg_ratio > 1.5:
-                                st.warning("⚠️ **High Horizontal Tension**: Your mouth tends to spread wide (smile shape). Try to drop your jaw more for a vertical vowel shape.")
+                            col1, col2 = st.columns(2)
+                            col1.metric("평균 긴장도 비율 (가로/세로)", f"{avg_ratio:.2f}")
+                            
+                            if avg_ratio > 10.0:
+                                st.error(f"⚠️ **입을 거의 안 벌리셨네요!** (비율 {avg_ratio:.1f})")
+                                st.info("세로로 입이 열리지 않아서 수치가 매우 높게 나왔습니다.\n'아~' 하고 하품하듯이 입을 위아래로 크게 벌려보세요.")
+                            elif avg_ratio > 2.0:
+                                st.warning(f"⚠️ **가로 긴장도 높음** (비율 {avg_ratio:.2f})")
+                                st.write("입술이 옆으로 찢어지는 '스마일' 형태입니다. 턱을 더 아래로 툭 떨어뜨리세요.")
                             else:
-                                st.success("✅ **Good Jaw Opening**: Your mouth shape seems balanced.")
+                                st.success(f"✅ **좋은 구강 모양입니다!** (비율 {avg_ratio:.2f})")
+                                st.write("위아래로 잘 열려있습니다. 이 상태를 유지하세요!")
                                 
                         else:
-                            st.error("Could not detect face/landmarks in the video. Please ensure face is visible.")
+                            st.error("영상에서 얼굴을 찾을 수 없습니다. (No Face Detected)")
                             
                     except Exception as e:
                         import traceback
