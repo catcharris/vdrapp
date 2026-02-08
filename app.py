@@ -117,7 +117,7 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("VDR Settings")
-        st.caption("v1.4 (Unpinned & Patched) ✅")
+        st.caption("v1.5 (OpenCV Headless Added) ✅")
         
         # User Profile
         st.subheader("Student Profile")
@@ -128,6 +128,22 @@ def main():
         # Update Passaggio Info
         st.session_state['session'].passaggio_info = PASSAGGIO_CRITERIA[st.session_state['session'].part]
         st.info(f"Passaggio: {st.session_state['session'].passaggio_info['desc']}")
+        
+        # Debug Info
+        with st.expander("🛠️ Debug Info (Show to Developer)"):
+            import sys
+            try:
+                import mediapipe as mp
+                st.text(f"MediaPipe: {mp.__version__}")
+                st.text(f"MP Solutions: {'✅' if hasattr(mp, 'solutions') else '❌'}")
+            except ImportError:
+                st.text("MediaPipe: Not Installed")
+                
+            try:
+                import cv2
+                st.text(f"OpenCV: {cv2.__version__}")
+            except ImportError:
+                st.text("OpenCV: Not Installed")
         
         st.markdown("---")
         

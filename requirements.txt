@@ -9,4 +9,4 @@ pretty_midi
 plotly
 pandas
 mediapipe
-# protobuf pinning removed to avoid install errors
+opencv-python-headless
