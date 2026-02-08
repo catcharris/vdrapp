@@ -37,7 +37,7 @@ class VideoProcessor:
     def process_video(self, video_file_path):
         """
         Processes video to extract facial tension metrics.
-        Returns a DataFrame with timestamps and metrics.
+        Returns (DataFrame, Max_Opening_Frame_RGB).
         """
         cap = cv2.VideoCapture(video_file_path)
         if not cap.isOpened():
@@ -47,6 +47,8 @@ class VideoProcessor:
         frame_count = 0
         
         data = []
+        max_vertical_dist = -1
+        max_frame_rgb = None
         
         while cap.isOpened():
             success, image = cap.read()
@@ -61,13 +63,6 @@ class VideoProcessor:
             
             if results.multi_face_landmarks:
                 for face_landmarks in results.multi_face_landmarks:
-                    # Extract Landmarks
-                    # Mouth: 
-                    # Upper Lip Top: 13
-                    # Lower Lip Bottom: 14
-                    # Left Corner: 61
-                    # Right Corner: 291
-                    
                     h, w, c = image.shape
                     
                     def get_coords(idx):
@@ -85,15 +80,15 @@ class VideoProcessor:
                     # Horizontal Spread
                     horizontal_dist = np.linalg.norm(left - right)
                     
-                    # Mouth Aspect Ratio (MAR) -> Openness
-                    # If Horizontal is huge compared to Vertical -> "Spread/Tight"
-                    # If Vertical is huge -> "Open/Dropped Jaw" (Good for singing)
+                    # Capture Max Opening Frame (Thumbnail Candidate)
+                    if vertical_dist > max_vertical_dist:
+                        max_vertical_dist = vertical_dist
+                        max_frame_rgb = image_rgb.copy()
                     
-                    # Tension Metric (heuristic): Horizontal / Vertical
-                    # Normal singing (Ah): Ratio ~ 0.5 - 1.0?
-                    # Tight smile (Ee): Ratio > 1.5?
-                    
-                    ratio = horizontal_dist / (vertical_dist + 1e-6) # Avoid div/0
+                    # Tension Metric: Width / Height
+                    # If Ratio > 5.0 -> Likely Mouth Closed
+                    # Normal Singing (Ah) -> Ratio 0.8 ~ 1.5
+                    ratio = horizontal_dist / (vertical_dist + 1e-6)
                     
                     data.append({
                         "time": timestamp,
@@ -105,15 +100,28 @@ class VideoProcessor:
             frame_count += 1
             
         cap.release()
-        return pd.DataFrame(data)
+        
+        if not data:
+            return None, None
+            
+        return pd.DataFrame(data), max_frame_rgb
 
     def generate_tension_chart(self, df):
         import plotly.express as px
         if df.empty:
             return None
             
-        fig = px.line(df, x="time", y="tension_ratio", title="Mouth Tension Analysis (Horizontal / Vertical Ratio)")
-        # Add 'Good' zone?
-        # Generally, we want vertical opening (lower ratio).
-        # High ratio = Wide mouth / Closed jaw -> Bad tension?
+        # Filter insane ratios (e.g. mouth closed) for better chart scaling
+        # Cap ratio at 5.0 for visualization
+        df['display_ratio'] = df['tension_ratio'].clip(upper=5.0)
+            
+        fig = px.line(df, x="time", y="display_ratio", title="구강 긴장도 (가로/세로 비율)")
+        fig.add_hline(y=1.5, line_dash="dash", line_color="red", annotation_text="긴장 구간 (가로 벌어짐)")
+        fig.add_hline(y=1.0, line_dash="dot", line_color="green", annotation_text="이상적 발성 (1.0 이하)")
+        
+        fig.update_layout(
+            yaxis_title="비율 (낮을수록 좋음: 수직 개방)", 
+            xaxis_title="시간 (초)",
+            yaxis_range=[0, 5.0]
+        )
         return fig
