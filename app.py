@@ -114,27 +114,29 @@ def main():
     st.set_page_config(page_title="Vocal Diagnostic Report", layout="wide")
     st.title("🎤 Vocal Diagnostic Report (VDR)")
 
-    # Sidebar (v1.15)
+    # Sidebar
     with st.sidebar:
-        st.title("VDR v1.15 (CHECK)")
-        st.caption(f"Python: {sys.version.split()[0]}")
+        st.title("VDR Settings")
         
-    # FORCE BUTTON (UNCONDITIONAL v1.15)
-    st.error(f"🚨 DEBUG v1.15 CHECK - Time: {pd.Timestamp.now().strftime('%H:%M:%S')}")
-    st.info(f"Detected Python Version: {sys.version}")
-
-    if st.button("💣 FORCE REBOOT (CLICK ME NOW)", type="primary", use_container_width=True):
-        st.warning("Killing process...")
-        import os
-        import signal
-        import time
-        time.sleep(1)
-        os.kill(os.getpid(), signal.SIGKILL)
+        # Version & Environment Check (v1.16 Stable)
+        import sys
+        current_py = sys.version.split()[0]
+        # Check if Python is 3.11 (Good) or 3.13 (Bad)
+        is_safe_version = sys.version_info < (3, 12) 
+        
+        if is_safe_version:
+            st.caption(f"v1.16 (Python {current_py} OK) ✅")
+        else:
+            st.error(f"⚠️ Old Server Detected ({current_py})")
+            st.caption("Please Delete & Re-deploy App")
+        
+        # User Profile
+        st.subheader("Student Profile")
     
-    st.markdown("---")
-    
-    # User Profile (Return to Sidebar context or handle properly)
-    with st.sidebar:
+    # Main Page Setup
+    if not is_safe_version:
+         st.warning(f"⚠️ Server is updating... (Python {current_py})")
+         st.markdown("---")
         st.session_state['session'].student_name = st.text_input("Name", st.session_state['session'].student_name)
         st.session_state['session'].part = st.selectbox("Part", PARTS, index=PARTS.index(st.session_state['session'].part))
         st.session_state['session'].coach_name = st.text_input("Coach", st.session_state['session'].coach_name)
