@@ -117,7 +117,7 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("VDR Settings")
-        st.caption("v1.9 (Pip Freeze Debug) ✅")
+        st.caption("v1.10 (Python 3.11 Force) ✅")
         
         # User Profile
         st.subheader("Student Profile")
