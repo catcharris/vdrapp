@@ -150,7 +150,19 @@ def main():
             target_note = target_map.get(st.session_state['session'].part, "C4").split(" ")[0] # Extract "F4" from "F4 (349 Hz)"
             st.info(f"🎵 **Target Note (Passaggio Start)**: {target_map.get(st.session_state['session'].part)}")
             
-            # Score display removed by user request (AI limitations in rendering)
+            # Play Reference Pitch
+            try:
+                # Extract Hz from string "F4 (349 Hz)" -> 349
+                target_str = target_map.get(st.session_state['session'].part, "C4 (261 Hz)")
+                hz_str = target_str.split("(")[1].split(" ")[0]
+                target_hz = float(hz_str)
+                
+                from src.audio_processor import generate_tone
+                tone_bytes = generate_tone(target_hz, duration_sec=2.0)
+                st.audio(tone_bytes, format='audio/wav', start_time=0)
+                st.caption("🔊 Play Reference Pitch")
+            except Exception as e:
+                st.warning(f"Audio Playback Error: {e}")
         
         st.markdown(f"_Duration Guide: {test['duration_guide']} seconds_")
         

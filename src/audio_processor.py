@@ -1,8 +1,23 @@
 import librosa
 import numpy as np
 import scipy.stats
+import scipy.io.wavfile as wavfile
+import io
 from typing import Tuple, List, Optional, Dict
 from src.utils import PASSAGGIO_CRITERIA
+
+def generate_tone(frequency: float, duration_sec: float = 2.0, sample_rate: int = 44100) -> io.BytesIO:
+    """Generates a sine wave tone for the given frequency."""
+    t = np.linspace(0, duration_sec, int(sample_rate * duration_sec), endpoint=False)
+    # Generate sine wave
+    waveform = 0.5 * np.sin(2 * np.pi * frequency * t)
+    # Convert to 16-bit PCM
+    waveform_int16 = (waveform * 32767).astype(np.int16)
+    
+    buf = io.BytesIO()
+    wavfile.write(buf, sample_rate, waveform_int16)
+    buf.seek(0)
+    return buf
 
 class AudioProcessor:
     def __init__(self, sample_rate: int = 22050):
