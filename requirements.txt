@@ -8,5 +8,5 @@ matplotlib
 pretty_midi
 plotly
 pandas
-mediapipe==0.10.9
-protobuf<4.0.0
+mediapipe
+opencv-python-headless
